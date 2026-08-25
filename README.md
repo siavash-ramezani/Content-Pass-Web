@@ -50,13 +50,31 @@ on port 8000 (e.g. via `php artisan serve` or Laravel Sail), at `http://localhos
 
 The backend is a separate repository and isn't included here.
 
-> **Note:** most endpoints (e.g. `GET /content`) require a valid JWT. Auth isn't wired up in the
-> frontend yet, so calls to protected endpoints will currently return 401 — this is expected
-> until login is implemented (see Roadmap).
+> **Note:** most endpoints (e.g. `GET /content`) require a valid JWT. Log in at `/login` first
+> (an account must already exist on the backend — there's no registration UI yet) to reach
+> `/dashboard`, which fetches content server-side with that token attached.
+
+## Auth & token storage
+
+Login (`/login`) posts credentials to a Route Handler (`app/api/login/route.ts`), which calls
+the backend's `POST /auth/login` and stores the returned JWT in an **HTTP-only cookie** —
+not `localStorage`. Two reasons:
+
+- The dashboard (`/dashboard`) is a Server Component that reads the token via `next/headers`
+  and fetches content server-side (true SSR, no client-side loading spinner); `localStorage`
+  isn't available on the server, so the token has to live somewhere the server can read it.
+- HTTP-only cookies aren't reachable from JavaScript, which limits exposure to XSS compared
+  to `localStorage`.
+
+This is intentionally minimal: just enough to unblock SSR data fetching. There's no
+registration UI, password reset, refresh-token handling, logout, or protected-route
+middleware yet — those are later days.
 
 ## Roadmap
 
-- [ ] Auth: login UI, JWT storage, authenticated API requests
-- [ ] SSR content pages (list + detail)
-- [ ] Subscriber dashboard
+- [x] Auth: minimal login UI, HTTP-only cookie JWT storage, authenticated API requests
+      (full auth UX — registration, logout, password reset, protected-route middleware —
+      still planned)
+- [x] SSR content pages — dashboard (`/dashboard`)
+- [ ] Subscriber dashboard polish (detail pages, richer content views)
 - [ ] Pricing page + plan selection

@@ -1,4 +1,10 @@
-import type { ApiCollection, ApiErrorBody, Content } from "@/types";
+import type {
+  ApiCollection,
+  ApiErrorBody,
+  Content,
+  LoginCredentials,
+  LoginResponse,
+} from "@/types";
 
 /**
  * Thrown for any non-2xx response so callers can `catch` a single, typed error
@@ -29,9 +35,6 @@ function getBaseUrl(): string {
 /**
  * Base fetch wrapper: resolves the path against NEXT_PUBLIC_API_URL, sets JSON
  * headers, and throws an ApiError on non-2xx responses.
- *
- * No auth token handling yet — that lands with login (Day 9). Endpoints that
- * require authentication (e.g. GET /content) will 401 until then; that's expected.
  */
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${getBaseUrl()}${path.startsWith("/") ? path : `/${path}`}`, {
@@ -59,10 +62,24 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
 
 /**
  * GET /content — the Day 6 content listing endpoint (Redis-cached on the backend).
- * This endpoint requires authentication, so until auth is wired up (Day 9) this
- * call is expected to throw an ApiError with status 401.
+ * Requires authentication; pass the caller's JWT to attach it as a Bearer token.
+ * Without a valid token this throws an ApiError with status 401.
  */
-export async function getContentList(): Promise<Content[]> {
-  const result = await apiFetch<ApiCollection<Content>>("/content");
+export async function getContentList(token?: string): Promise<Content[]> {
+  const result = await apiFetch<ApiCollection<Content>>("/content", {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  });
   return result.data;
+}
+
+/**
+ * POST /auth/login — exchanges email/password for a JWT.
+ * Intended to be called server-side only (from app/api/login/route.ts), which
+ * persists the returned token into an HTTP-only cookie.
+ */
+export async function login(credentials: LoginCredentials): Promise<LoginResponse> {
+  return apiFetch<LoginResponse>("/auth/login", {
+    method: "POST",
+    body: JSON.stringify(credentials),
+  });
 }
