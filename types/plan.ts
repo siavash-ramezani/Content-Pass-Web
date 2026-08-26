@@ -9,6 +9,8 @@ export interface Plan {
   price: number;
   currency: string;
   billing_interval: "monthly" | "yearly";
+  /** Assumption — verify against the backend's actual shape. */
+  features: string[];
   created_at: string;
   updated_at: string;
 }

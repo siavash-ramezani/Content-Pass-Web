@@ -1,9 +1,12 @@
 import type {
   ApiCollection,
   ApiErrorBody,
+  ApiResource,
   Content,
   LoginCredentials,
   LoginResponse,
+  Plan,
+  Subscription,
 } from "@/types";
 
 /**
@@ -82,4 +85,46 @@ export async function login(credentials: LoginCredentials): Promise<LoginRespons
     method: "POST",
     body: JSON.stringify(credentials),
   });
+}
+
+/** GET /plans — public, no auth required. */
+export async function getPlans(): Promise<Plan[]> {
+  const result = await apiFetch<ApiCollection<Plan>>("/plans");
+  return result.data;
+}
+
+/** POST /subscriptions — subscribes the caller to a plan. */
+export async function subscribeToPlan(planId: number, token: string): Promise<Subscription> {
+  const result = await apiFetch<ApiResource<Subscription>>("/subscriptions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ plan_id: planId }),
+  });
+  return result.data;
+}
+
+/** DELETE /subscriptions/current — cancels the caller's active subscription. */
+export async function cancelSubscription(token: string): Promise<void> {
+  await apiFetch<null>("/subscriptions/current", {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+/**
+ * GET /subscriptions/current. Returns null when the user has no active
+ * subscription (assumes the backend responds 404 in that case).
+ */
+export async function getCurrentSubscription(token: string): Promise<Subscription | null> {
+  try {
+    const result = await apiFetch<ApiResource<Subscription>>("/subscriptions/current", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return result.data;
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) {
+      return null;
+    }
+    throw err;
+  }
 }

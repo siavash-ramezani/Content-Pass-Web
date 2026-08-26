@@ -76,5 +76,7 @@ middleware yet — those are later days.
       (full auth UX — registration, logout, password reset, protected-route middleware —
       still planned)
 - [x] SSR content pages — dashboard (`/dashboard`)
+- [x] Pricing page + mock subscribe/cancel flow (`/pricing`, Server Actions calling the
+      subscriptions API) — functional, not visually polished; no real payment processor
 - [ ] Subscriber dashboard polish (detail pages, richer content views)
-- [ ] Pricing page + plan selection
+- [ ] Admin UI
