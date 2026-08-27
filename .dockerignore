@@ -1,0 +1,20 @@
+# dependencies
+node_modules
+
+# next.js build output
+.next
+out
+
+# version control
+.git
+.gitignore
+
+# env files — NEXT_PUBLIC_API_URL comes in via a build ARG instead, so local
+# env files should never be baked into the image.
+.env
+.env.local
+.env.*.local
+
+# misc
+npm-debug.log*
+README.md
