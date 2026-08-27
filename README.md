@@ -54,6 +54,23 @@ The backend is a separate repository and isn't included here.
 > (an account must already exist on the backend — there's no registration UI yet) to reach
 > `/dashboard`, which fetches content server-side with that token attached.
 
+## Docker
+
+This repo has a `Dockerfile` (multi-stage, using Next.js `output: "standalone"` for a lean
+production image) and a `.dockerignore`. It's not meant to be built standalone day-to-day —
+the **ContentPass backend repo**'s `docker-compose.yml` builds this app from this repo as a
+sibling build context alongside the Laravel API and its other services, and runs it on port 3000.
+
+The one thing to know when building manually: `NEXT_PUBLIC_API_URL` has to be passed as a Docker
+**build** argument, not a runtime environment variable. Next.js inlines `NEXT_PUBLIC_*` variables
+into the client JS bundle during `next build`; setting it only at `docker run` / container-start
+time is too late — the value is already baked into the compiled bundle by then.
+
+```bash
+docker build --build-arg NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1 -t content-pass-web .
+docker run -p 3000:3000 content-pass-web
+```
+
 ## Auth & token storage
 
 Login (`/login`) posts credentials to a Route Handler (`app/api/login/route.ts`), which calls
