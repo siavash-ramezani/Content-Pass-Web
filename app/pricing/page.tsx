@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getCurrentSubscription, getPlans } from "@/lib/api";
 import { getAuthToken } from "@/lib/auth";
 import { subscribeAction } from "./actions";
+import { SubscribeButton } from "./SubscribeButton";
 
 function formatPrice(price: number, currency: string): string {
   return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(price);
@@ -60,12 +61,7 @@ export default async function PricingPage({ searchParams }: PageProps<"/pricing"
               ) : token ? (
                 <form action={subscribeAction} className="mt-6">
                   <input type="hidden" name="planId" value={plan.id} />
-                  <button
-                    type="submit"
-                    className="w-full rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
-                  >
-                    Subscribe
-                  </button>
+                  <SubscribeButton />
                 </form>
               ) : (
                 <Link

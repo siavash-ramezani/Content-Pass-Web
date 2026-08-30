@@ -87,6 +87,16 @@ This is intentionally minimal: just enough to unblock SSR data fetching. There's
 registration UI, password reset, refresh-token handling, logout, or protected-route
 middleware yet — those are later days.
 
+## Error handling & loading states
+
+`lib/api.ts` throws a single `ApiError` type for every failure — including network-level
+failures (backend unreachable), which are normalized to `status: 0` rather than leaking a raw
+`fetch` error — so callers only ever need to catch one thing. `/dashboard` and `/pricing` each
+have a `loading.tsx` (streamed skeleton while data fetches) and an `error.tsx` (fallback UI for
+failures other than an expired session, which redirects to `/login` instead). Visiting `/login`
+while already authenticated redirects to `/dashboard`; the reverse (an expired/invalid token on
+`/dashboard`) redirects back to `/login`.
+
 ## Roadmap
 
 - [x] Auth: minimal login UI, HTTP-only cookie JWT storage, authenticated API requests

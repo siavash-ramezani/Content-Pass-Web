@@ -4,6 +4,7 @@ import { ApiError, getContentList, getCurrentSubscription } from "@/lib/api";
 import { getAuthToken } from "@/lib/auth";
 import type { Content, Subscription } from "@/types";
 import { cancelSubscriptionAction } from "./actions";
+import { CancelSubscriptionButton } from "./CancelSubscriptionButton";
 
 function ContentCard({ item }: { item: Content }) {
   return (
@@ -24,6 +25,8 @@ function ContentCard({ item }: { item: Content }) {
 }
 
 export default async function DashboardPage({ searchParams }: PageProps<"/dashboard">) {
+  // layout.tsx already redirects if there's no token at all; this re-check
+  // just narrows the type to `string` (and is a harmless no-op in practice).
   const token = await getAuthToken();
 
   if (!token) {
@@ -74,12 +77,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
               )}
             </div>
             <form action={cancelSubscriptionAction}>
-              <button
-                type="submit"
-                className="rounded border border-red-300 px-3 py-1.5 text-sm font-medium text-red-700 dark:border-red-800 dark:text-red-300"
-              >
-                Cancel subscription
-              </button>
+              <CancelSubscriptionButton />
             </form>
           </div>
         ) : (
@@ -92,35 +90,47 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
         )}
       </section>
 
-      <section className="mt-8">
-        <h2 className="text-sm font-semibold tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
-          Accessible
-        </h2>
-        {accessible.length > 0 ? (
-          <ul className="mt-3 flex flex-col gap-3">
-            {accessible.map((item) => (
-              <ContentCard key={item.id} item={item} />
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">No accessible content.</p>
-        )}
-      </section>
+      {content.length === 0 ? (
+        <section className="mt-8">
+          <div className="rounded border border-zinc-200 p-8 text-center dark:border-zinc-800">
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">No content available yet.</p>
+          </div>
+        </section>
+      ) : (
+        <>
+          <section className="mt-8">
+            <h2 className="text-sm font-semibold tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
+              Accessible
+            </h2>
+            {accessible.length > 0 ? (
+              <ul className="mt-3 flex flex-col gap-3">
+                {accessible.map((item) => (
+                  <ContentCard key={item.id} item={item} />
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">
+                No accessible content.
+              </p>
+            )}
+          </section>
 
-      <section className="mt-8">
-        <h2 className="text-sm font-semibold tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
-          Locked
-        </h2>
-        {locked.length > 0 ? (
-          <ul className="mt-3 flex flex-col gap-3">
-            {locked.map((item) => (
-              <ContentCard key={item.id} item={item} />
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">No locked content.</p>
-        )}
-      </section>
+          <section className="mt-8">
+            <h2 className="text-sm font-semibold tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
+              Locked
+            </h2>
+            {locked.length > 0 ? (
+              <ul className="mt-3 flex flex-col gap-3">
+                {locked.map((item) => (
+                  <ContentCard key={item.id} item={item} />
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">No locked content.</p>
+            )}
+          </section>
+        </>
+      )}
     </div>
   );
 }

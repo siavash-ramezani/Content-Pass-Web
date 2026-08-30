@@ -22,9 +22,15 @@ export async function POST(request: Request) {
     });
     return response;
   } catch (err) {
-    if (err instanceof ApiError) {
+    // Client errors (wrong credentials, validation) are safe to show as-is.
+    if (err instanceof ApiError && err.status >= 400 && err.status < 500) {
       return NextResponse.json({ message: err.message }, { status: err.status });
     }
-    return NextResponse.json({ message: "Login failed. Please try again." }, { status: 502 });
+    // Anything else — backend 5xx, or unreachable entirely (status 0, see
+    // lib/api.ts) — don't leak upstream internals; show a generic message.
+    return NextResponse.json(
+      { message: "Something went wrong. Please try again later." },
+      { status: 502 },
+    );
   }
 }

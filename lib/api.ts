@@ -11,9 +11,11 @@ import type {
 
 /**
  * Thrown for any non-2xx response so callers can `catch` a single, typed error
- * instead of branching on `res.ok` everywhere.
+ * instead of branching on `res.ok` everywhere. Also thrown (with status 0, body
+ * null) when the request never got a response at all — see apiFetch below.
  */
 export class ApiError extends Error {
+  /** HTTP status from the backend, or 0 if the request never reached it. */
   status: number;
   body: ApiErrorBody | null;
 
@@ -38,16 +40,26 @@ function getBaseUrl(): string {
 /**
  * Base fetch wrapper: resolves the path against NEXT_PUBLIC_API_URL, sets JSON
  * headers, and throws an ApiError on non-2xx responses.
+ *
+ * Also wraps network-level failures (backend unreachable, DNS/timeout — `fetch`
+ * itself rejecting rather than resolving with a non-2xx response) into an
+ * ApiError with status 0, so every caller can catch a single error type
+ * instead of needing to separately handle raw TypeErrors from `fetch`.
  */
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${getBaseUrl()}${path.startsWith("/") ? path : `/${path}`}`, {
-    ...init,
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-      ...init?.headers,
-    },
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${getBaseUrl()}${path.startsWith("/") ? path : `/${path}`}`, {
+      ...init,
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        ...init?.headers,
+      },
+    });
+  } catch {
+    throw new ApiError("Unable to reach the ContentPass API. Is the backend running?", 0, null);
+  }
 
   const body = (await res.json().catch(() => null)) as T | ApiErrorBody | null;
 
